@@ -51,6 +51,8 @@ void init100usTimer2(uint64_t speed)
 	OCR2A = (25 * ((speed/1000000UL) >> 3) - 1);
 
 	SREG = tmpSREG;
+
+	sei();
 }
 
 void init1msTimer0(uint64_t speed)
