@@ -39,20 +39,34 @@ uint64_t e_milliseconds = 0;
 
 void init100usTimer2(uint64_t speed)
 {
+	uint8_t tmpSREG = 0;
+
+	tmpSREG = SREG;
+	cli();
+
 	//setup 100_MICROSECONDS timer
 	TCCR2A = (1 << WGM21);
 	TCCR2B =  (1 << CS21) | (1 << CS20);
 	TIMSK2 = (1 << OCIE2A);
 	OCR2A = (25 * ((speed/1000000UL) >> 3) - 1);
+
+	SREG = tmpSREG;
 }
 
 void init1msTimer0(uint64_t speed)
 {
+	uint8_t tmpSREG = 0;
+
+	tmpSREG = SREG;
+	cli();
+
 	//setup timer0 for 1 ms counter
 	TCCR0A = (1 << WGM01);
 	TCCR0B = (1 << CS01) | (1 << CS00);
 	TIMSK0 = (1 << OCIE0A);
 	OCR0A = 125 * ((speed/1000000UL) >> 3) - 1;
+
+	SREG = tmpSREG;
 }
 
 //counts in microsecond increments
@@ -65,4 +79,3 @@ ISR(TIMER0_COMPA_vect)
 {
   e_milliseconds++;
 }
-
