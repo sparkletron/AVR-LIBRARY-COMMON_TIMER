@@ -1,7 +1,7 @@
 SOURCES := commonTimer.c
 ARCHIVE := $(addprefix lib,$(SOURCES:.c=.a))
-AVR_MMCU = atmega328p
-AVR_CPU_SPEED = 16000000UL
+AVR_MMCU := $(if $(AVR_MMCU),$(AVR_MMCU),atmega328p)
+AVR_CPU_SPEED := $(if $(AVR_CPU_SPEED),$(AVR_CPU_SPEED),16000000UL)
 LIB_PATH =
 
 CROSS_COMPILE := avr-
