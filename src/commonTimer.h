@@ -1,4 +1,3 @@
-
 /*******************************************************************************
  * @file    commonTimer.h
  * @author  Jay Convertino(electrobs@gmail.com)
