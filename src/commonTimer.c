@@ -1,39 +1,31 @@
-/*******************************************************************************
- * @file    commonTimer.h
- * @author  Jay Convertino(electrobs@gmail.com)
- * @date    2014.11.06
- * @brief   Timers
- * @details Collection of ways of initializing timer 2 for counting, pass F_CPU for speed setting
- *          based on compile time define for speed. This scales the counters for 8 MHz to 16 Mhz.
- * @version 0.3.0
+/*
+ * commonTimer.c
  *
- * PREVIOUS:
- * Feb, 11 2014	0.3	changed timers to be scalable by speed and added timer 0 1 ms
- * 11/5/14		0.1	setup first 100us counter
+ *  Created on: Nov 6, 2014
+ *      Author: John Convertino
  *
- * @license mit
+ *      Collection of ways of initializing timer 2 for counting, pass F_CPU for speed setting
+ *      based on compile time define for speed. This scales the counters for 8 MHz to 16 Mhz.
  *
- * Copyright 2024 Johnathan Convertino
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- * IN THE SOFTWARE.
- ******************************************************************************/
+    Copyright (C) 2014 John Convertino
 
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ *      Version Status: 0.3
+ *      Feb, 11 2014	0.3	changed timers to be scalable by speed and added timer 0 1 ms
+ *      11/5/14		0.1	setup first 100us counter
  */
 //avr includes
 #include <avr/common.h>
@@ -53,10 +45,19 @@ void init100usTimer2(uint64_t speed)
 	cli();
 
 	//setup 100_MICROSECONDS timer
+#ifdef _AVR_IOM328P_H_
 	TCCR2A = (1 << WGM21);
-	TCCR2B =  (1 << CS21) | (1 << CS20);
+	TCCR2B =  (1 << CS21);
+#endif
+
+#ifdef _AVR_ATMEGA329P_H_INCLUDED
+ 	TCCR2A = (1 << WGM21) | (1 << CS21);
+#endif
+
 	TIMSK2 = (1 << OCIE2A);
-	OCR2A = (25 * ((speed/1000000UL) >> 3) - 1);
+  //better math, just divide speed by target freq and clock divider and subtract one since zero is included.
+  //if it overflows... well the divider is too low anyways. (10000 Hz = 100us pulse time)
+  OCR2A = ((speed/10000UL) >> 3) - 1;
 
 	SREG = tmpSREG;
 
@@ -71,14 +72,25 @@ void init1msTimer0(uint64_t speed)
 	cli();
 
 	//setup timer0 for 1 ms counter
+#ifdef _AVR_IOM328P_H_
 	TCCR0A = (1 << WGM01);
-	TCCR0B = (1 << CS01) | (1 << CS00);
+	TCCR0B = (1 << CS02);
+#endif
+
+#ifdef _AVR_ATMEGA329P_H_INCLUDED
+ 	TCCR0A = (1 << WGM01) | (1 << CS02);
+#endif
 	TIMSK0 = (1 << OCIE0A);
-	OCR0A = 125 * ((speed/1000000UL) >> 3) - 1;
+  //better math, just divide speed by target freq and clock divider and subtract one since zero is included.
+  //if it overflows... well the divider is too low anyways. (1000 Hz = 1ms pulse time)
+	OCR0A = ((speed/1000UL) >> 8) - 1;
 
 	SREG = tmpSREG;
+  
+  sei();
 }
 
+#ifdef _AVR_IOM328P_H_
 //counts in microsecond increments
 ISR(TIMER2_COMPA_vect)
 {
@@ -89,3 +101,17 @@ ISR(TIMER0_COMPA_vect)
 {
   e_milliseconds++;
 }
+#endif
+
+#ifdef _AVR_ATMEGA329P_H_INCLUDED
+//counts in microsecond increments
+ISR(TIMER2_COMP_vect)
+{
+  e_100microseconds++;
+}
+//count millseconds
+ISR(TIMER0_COMP_vect)
+{
+  e_milliseconds++;
+}
+#endif
